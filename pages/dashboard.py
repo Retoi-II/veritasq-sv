@@ -56,7 +56,6 @@ with col1:
 with col2:
     team_badge = st.container(border=True)
     with team_badge:
-        logos = st.container()
         team1, team2, save = st.columns([2,2,1])
         with team1:
             team_1_selection = st.empty()
@@ -67,6 +66,7 @@ with col2:
         with save:
             with st.container(vertical_alignment="bottom", height="stretch", horizontal=True, horizontal_alignment="center"):
                 cfg_save = st.empty()
+        logos = st.container()
     team_df = st.container()
     status_message = st.empty()
     
