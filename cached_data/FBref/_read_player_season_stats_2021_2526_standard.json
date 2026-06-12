@@ -1,0 +1,90 @@
+{
+    "nation_": [
+        "nation",
+        ""
+    ],
+    "pos_": [
+        "pos",
+        ""
+    ],
+    "age_": [
+        "age",
+        ""
+    ],
+    "club_": [
+        "Club",
+        ""
+    ],
+    "playing_time_born": [
+        "Playing Time",
+        "born"
+    ],
+    "playing_time_mp": [
+        "Playing Time",
+        "MP"
+    ],
+    "playing_time_starts": [
+        "Playing Time",
+        "Starts"
+    ],
+    "playing_time_min": [
+        "Playing Time",
+        "Min"
+    ],
+    "playing_time_90s": [
+        "Playing Time",
+        "90s"
+    ],
+    "performance_gls": [
+        "Performance",
+        "Gls"
+    ],
+    "performance_ast": [
+        "Performance",
+        "Ast"
+    ],
+    "performance_ga": [
+        "Performance",
+        "G+A"
+    ],
+    "performance_g_pk": [
+        "Performance",
+        "G-PK"
+    ],
+    "performance_pk": [
+        "Performance",
+        "PK"
+    ],
+    "performance_pkatt": [
+        "Performance",
+        "PKatt"
+    ],
+    "performance_crdy": [
+        "Performance",
+        "CrdY"
+    ],
+    "performance_crdr": [
+        "Performance",
+        "CrdR"
+    ],
+    "per_90_minutes_gls": [
+        "Per 90 Minutes",
+        "Gls"
+    ],
+    "per_90_minutes_ast": [
+        "Per 90 Minutes",
+        "Ast"
+    ],
+    "per_90_minutes_ga": [
+        "Per 90 Minutes",
+        "G+A"
+    ],
+    "per_90_minutes_g_pk": [
+        "Per 90 Minutes",
+        "G-PK"
+    ],
+    "per_90_minutes_ga_pk": [
+        "Per 90 Minutes",
+        "G+A-PK"
+    ]
+}
