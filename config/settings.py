@@ -58,7 +58,8 @@ GET_PATH: GetPath = {
     'cache_ws': _path / "cached_data" / "WhoScored",
     'events_path': lambda league, season, team: (
         _path / "cached_data" / "WhoScored" / f"{league}_{season}" / team
-    )
+    ),
+    'badges': _path / "static" / "images" / "badges"
 }
 """GetPath: Define the core directory.
 
@@ -100,6 +101,9 @@ GET_WHOSCORED: WhoScored = {
     'schedule': GET_PATH['cache_ws'] / "_schedule.csv",
     'events': lambda league, season, team, game_id: (
         GET_PATH['events_path'](league, season, team) / f"_events_{game_id}.csv"
+    ),
+    'badge': lambda id: (
+        GET_PATH['badges'] / f"{id}.png"
     )
 }
 """WhoScored: Define the dataset location for WhoScored.

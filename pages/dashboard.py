@@ -56,6 +56,7 @@ with col1:
 with col2:
     team_badge = st.container(border=True)
     with team_badge:
+        logos = st.container()
         team1, team2, save = st.columns([2,2,1])
         with team1:
             team_1_selection = st.empty()
@@ -66,8 +67,8 @@ with col2:
         with save:
             with st.container(vertical_alignment="bottom", height="stretch", horizontal=True, horizontal_alignment="center"):
                 cfg_save = st.empty()
-        logos = st.container()
     team_df = st.container()
+    status_message = st.empty()
     
 
 # ------------------------------------------------------------------------------- #
@@ -84,8 +85,7 @@ with col3:
         else:
             cfg_show.info("No configurations.")
         
-status_message = st.empty()
-with st.container(height=400):
+with st.container(height=100, border=False):
     log_ui_placeholder = st.empty()
 
 
@@ -402,9 +402,14 @@ def main() -> None:
     with logos:
         if "team_a" in st.session_state and "team_b" in st.session_state:
             if "team_badge" in st.session_state:
-                st.text("Process 2")
-                st.badge(conf['team_a_prev'])
-                st.badge(conf['team_b_prev'])
+                tb_df = pd.read_csv(GET_PATH['cache_ws'] / "_team_id.csv")
+                id_a = tb_df[tb_df['team_name'] == st.session_state.team_a]['team_id'].item()
+                id_b = tb_df[tb_df['team_name'] == st.session_state.team_b]['team_id'].item()
+                col1, col2 = st.columns(2)
+                with col1:
+                    with st.container(border=True, horizontal=True, horizontal_alignment="center"): st.image(GET_WHOSCORED['badge'](int(id_a)))
+                with col2:
+                    with st.container(border=True, horizontal=True, horizontal_alignment="center"): st.image(GET_WHOSCORED['badge'](int(id_b)))
             else:
                 st.text("Process 2 (else)")
 
@@ -473,7 +478,7 @@ def main() -> None:
                                 events_df (per id fetch DataFrame)
                             """
                             events_df.to_csv(path, mode='w') # Convert fetched DataFrame -> CSV
-                            set.logMsg(f":green[SUCCESS:]&emsp;:green[Save events DataFrame to path.]\n&emsp;**:green[{path}]**", level=5, container=status_message)
+                            set.logMsg(f":green[SUCCESS]&emsp;:green[Save events DataFrame to path.]\n&emsp;**:green[{path}]**", level=5, container=status_message)
                             return events_df
                         
                         events_summary = pd.DataFrame()
@@ -492,7 +497,7 @@ def main() -> None:
                                     # -- CASE 1: File doesn't exist locally ----- #
                                     # ---------- ( FETCH MODE ) ----------------- #
                                     if not file_name.exists():
-                                        set.logMsg(f"\n:blue[INFO:]\tFetch events from WhoScored... Club ({i}/{total_clubs})) | Game ({j}/{total_games} to {file_name})", level=4, container=status_message)
+                                        set.logMsg(f"\n:blue[INFO]&emsp;:blue[Fetch events from WhoScored... Club ({i}/{total_clubs})) | Game ({j}/{total_games})]\n&emsp;to **:green[{file_name}]**", level=4, container=status_message)
                                         events = call_read_events(id)
 
                                         if not events.empty:
@@ -504,26 +509,26 @@ def main() -> None:
                                     # ---------- ( OFFLINE LOAD MODE ) ---------- #
                                     else:
                                         try:
-                                            set.logMsg(f"\n:blue[INFO:]&emsp;Load events from local path...\n&emsp;**:blue[{file_name}]**", level=4, container=status_message)
+                                            set.logMsg(f"\n:blue[INFO]&emsp;Load events from local path...\n&emsp;**:blue[{file_name}]**", level=4, container=status_message)
                                             df = pd.read_csv(file_name) # Offline DataFrame
                                             if isinstance(df, pd.DataFrame) and not df.empty:
                                                 set.logMsg(f":green[SUCCESS]&emsp;Events loaded from local path: {file_name.name}", level=5, container=status_message)
                                                 events_summary = pd.concat([events_summary, df], ignore_index=True)
                                                 st.toast(f"Successfully load events data for :green[{file_name.name}] from local path", duration="short")
                                             else:
-                                                set.logMsg(f":red[ERROR:]&emsp;:red[{file_name.name} exists but is empty.]", level=404, container=status_message)
+                                                set.logMsg(f":red[ERROR]&emsp;:red[{file_name.name} exists but is empty.]", level=404, container=status_message)
 
                                         # -- CASE 3: File is corrupted ---------- #
                                         # ---------- ( RECOVERY MODE ) ---------- #
                                         except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
-                                            set.logMsg(f"\n:red[ERROR:]&emsp;:red[File corrupted: {file_name.name}.]\n&emsp;**:red[({e}).]**", level=404, container=status_message)
-                                            set.logMsg(f":blue[INFO:]&emsp;Attempting automatic redownload...", level=4, container=status_message)
+                                            set.logMsg(f"\n:red[ERROR]&emsp;:red[File corrupted: {file_name.name}.]\n&emsp;**:red[({e}).]**", level=404, container=status_message)
+                                            set.logMsg(f":blue[INFO]&emsp;Attempting automatic redownload...", level=4, container=status_message)
                                             events_fix = call_read_events(id)
                                             if not events_fix.empty:
                                                 fetch_events_df(file_name, events_fix)
                                                 events_df = pd.read_csv(file_name)
                                                 events_summary = pd.concat([events_summary, events_df], ignore_index=True)
-                                                set.logMsg(f":green[SUCCESS:]&emsp;Corrupted file replaced successfully.", level=5, container=status_message)
+                                                set.logMsg(f":green[SUCCESS]&emsp;Corrupted file replaced successfully.", level=5, container=status_message)
 
                                         except Exception as e:
                                             print(f":red[ERROR]&emsp;:red[An unexpected error occurred while reading the file:] \n&emsp;{e}")
