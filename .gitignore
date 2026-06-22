@@ -1,3 +1,12 @@
 *pycache*
 .venv
-temp
+*temp*
+*:Zone.Identifier
+*.ipynb
+soccerdata.rar
+tem
+events.zip
+matches.zip
+socceraction_.rar
+csv
+manual_parquet.rar

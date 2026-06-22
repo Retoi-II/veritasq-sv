@@ -1,5 +1,5 @@
 import importlib.metadata
-import json
+import pandas as pd
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -47,6 +47,7 @@ class GetPath(TypedDict):
     locales: Path
     cache_fb: Path
     cache_ws: Path
+    cache_sd: Path
     events_path: Callable[[str, str | int, str], Path]
 
 _path = Path(__file__).resolve().parent.parent
@@ -56,8 +57,9 @@ GET_PATH: GetPath = {
     'locales': _path / "locales",
     'cache_fb': _path / "cached_data" / "FBref",
     'cache_ws': _path / "cached_data" / "WhoScored",
+    'cache_sd': _path / "cached_data" / "soccerdata",
     'events_path': lambda league, season, team: (
-        _path / "cached_data" / "WhoScored" / f"{league}_{season}" / team
+        _path / "cached_data" / "WhoScored" / "events" / "csv" / f"{league}_{season}" / team
     ),
     'badges': _path / "static" / "images" / "badges"
 }
@@ -68,6 +70,7 @@ Attributes:
     ['locales'] (**standard key**, language folder) :
     ['cache_fb'] (**standard key**, cached dataset from fbref) :
     ['cache_ws'] (**standard key**, cached dataset from whoscored) :
+    ['cache_sd'] (**standard key**, cached raw data from soccerdata) :
     ['events_path'] (**callable key**, events dataset path) : `league` `season` `team` (required parameters)
 
 ## _Example:_
@@ -79,8 +82,8 @@ GET_PATH['locales'] # "/home/lyra/veritasq-sv/locales"
 GET_PATH['events_path'](
     league="ENG-Premier League", 
     season=2526, 
-    team="Manchester Utd"
-) # "/home/lyra/veritasq-sv/cached_data/WhoScored/ENG-Premier League_2526/Manchester Utd"
+    team="Manchester United"
+) # "/home/lyra/veritasq-sv/cached_data/WhoScored/ENG-Premier League_2526/Manchester United"
 ```
 """
 
@@ -92,15 +95,22 @@ class WhoScored(TypedDict):
     tournament: Path
     game_info: Path
     schedule: Path
+    raw_events: Path
     events: Callable[[str, str | int, str, str, str | int], Path]
+    spadl: Callable[[str, str | int, str, str], Path]
+    badge: int
 
 GET_WHOSCORED: WhoScored = {
     'regional': GET_PATH['cache_ws'] / "_regional_data.csv",
     'tournament': GET_PATH['cache_ws'] / "_tournaments_data.csv",
     'game_info': GET_PATH['cache_ws'] / "_game_info.jsonl",
     'schedule': GET_PATH['cache_ws'] / "_schedule.csv",
+    'raw_events': GET_PATH['cache_ws'] / "events" / "json",
     'events': lambda league, season, team, game_id: (
         GET_PATH['events_path'](league, season, team) / f"_events_{game_id}.csv"
+    ),
+    'spadl': lambda league, season, type: (
+        GET_PATH['cache_ws'] / "events" / f"{league}_{season}_{type}.parquet"
     ),
     'badge': lambda id: (
         GET_PATH['badges'] / f"{id}.png"
@@ -114,6 +124,8 @@ Attributes:
     ['game_info'] (**standard key**, offline dataset for game_info) :
     ['schedule'] (**standard key**, offline dataset for schedule) :
     ['events'] (**callable key**, events dataset location) : `league` `season` `team` `game_id` (required parameters)
+    ['spadl'] (**callable key**, events dataset location) : `league` `season` `type` (required parameters)
+    ['badge'] (**callable key**, events dataset location) : `id` (required parameters)
 
 ## _Example:_
 ```
@@ -124,9 +136,9 @@ GET_PATH['regional'] # "/home/lyra/veritasq-sv/cached_data/WhoScored/_regional_d
 GET_PATH['events'](
     league="ENG-Premier League", 
     season=2526, 
-    team="Manchester Utd",
-    game_id=1729488
-) # "/home/lyra/veritasq-sv/cached_data/WhoScored/ENG-Premier League_2526/Manchester Utd/_events_1729488.csv"
+    team="Manchester United",
+    game_id=1903490
+) # "/home/lyra/veritasq-sv/cached_data/WhoScored/ENG-Premier League_2526/Manchester United/_events_1903490.csv"
 ```
 """
 
@@ -191,6 +203,221 @@ class Settings:
         self.default_container = default_container or st
         self.default_color = default_color
         self._rich_console = Console()
+        self.master_club_registry = {
+            'Leeds United': {
+                'fbref': "Leeds United",
+                'whoscored': "Leeds",
+                'flashscore': "Leeds"
+            },
+            'Leicester City': {
+                'fbref': "Leicester City",
+                'whoscored': "Leicester",
+                'flashscore': "Leicester"
+            },
+            'Manchester Utd': {
+                'fbref': "Manchester Utd",
+                'whoscored': "Manchester United",
+                'flashscore': "Manchester United"
+            },
+            'Newcastle United': {
+                'fbref': "Newcastle United",
+                'whoscored': "Newcastle",
+                'flashscore': "Newcastle"
+            },
+            'Tottenham Hotspur': {
+                'fbref': "Tottenham Hotspur",
+                'whoscored': "Tottenham",
+                'flashscore': "Tottenham"
+            },
+            'West Brom': {
+                'fbref': "West Brom",
+                'whoscored': "West Bromwich Albion",
+                'flashscore': "West Bromwich Albion"
+            },
+            'West Ham United': {
+                'fbref': "West Ham United",
+                'whoscored': "West Ham",
+                'flashscore': "West Ham"
+            },
+            'Norwich City': {
+                'fbref': "Norwich City",
+                'whoscored': "Norwich",
+                'flashscore': "Norwich"
+            },
+            'Luton Town': {
+                'fbref': "Luton Town",
+                'whoscored': "Luton",
+                'flashscore': "Luton"
+            },
+            'Ipswich Town': {
+                'fbref': "Ipswich Town",
+                'whoscored': "Ipswich",
+                'flashscore': "Ipswich"
+            },
+            'Alavés': {
+                'fbref': "Alavés",
+                'whoscored': "Deportivo Alaves",
+                'flashscore': "Alavés"
+            },
+            'Atlético Madrid': {
+                'fbref': "Atlético Madrid",
+                'whoscored': "Atletico Madrid",
+                'flashscore': "Atlético Madrid"
+            },
+            'Cádiz': {
+                'fbref': "Cádiz",
+                'whoscored': "Cadiz",
+                'flashscore': "Cádiz"
+            },
+            'Huesca': {
+                'fbref': "Huesca",
+                'whoscored': "SD Huesca",
+                'flashscore': "Huesca"
+            },
+            'Valladolid': {
+                'fbref': "Valladolid",
+                'whoscored': "Real Valladolid",
+                'flashscore': "Valladolid"
+            },
+            'Almería': {
+                'fbref': "Almería",
+                'whoscored': "Almeria",
+                'flashscore': "Almería"
+            },
+            'Leganés': {
+                'fbref': "Leganés",
+                'whoscored': "Leganes",
+                'flashscore': "Leganés"
+            },
+            'Oviedo': {
+                'fbref': "Oviedo",
+                'whoscored': "Real Oviedo",
+                'flashscore': "Oviedo"
+            },
+            'Nîmes': {
+                'fbref': "Nîmes",
+                'whoscored': "Nimes",
+                'flashscore': "Nîmes"
+            },
+            'Saint-Étienne': {
+                'fbref': "Saint-Étienne",
+                'whoscored': "Saint-Etienne",
+                'flashscore': "Saint-Étienne"
+            },
+            'Ajaccio': {
+                'fbref': "Ajaccio",
+                'whoscored': "AC Ajaccio",
+                'flashscore': "Ajaccio"
+            },
+            'N. Macedonia': {
+                'fbref': "N. Macedonia",
+                'whoscored': "North Macedonia",
+                'flashscore': "N. Macedonia"
+            },
+            'Türkiye': {
+                'fbref': "Türkiye",
+                'whoscored': "Turkiye",
+                'flashscore': "Türkiye"
+            },
+            'China PR': {
+                'fbref': "China PR",
+                'whoscored': "China",
+                'flashscore': "China PR"
+            },
+            'Korea Republic': {
+                'fbref': "Korea Republic",
+                'whoscored': "South Korea",
+                'flashscore': "Korea Republic"
+            },
+            'Rep. of Ireland': {
+                'fbref': "Rep. of Ireland",
+                'whoscored': "Ireland",
+                'flashscore': "Rep. of Ireland"
+            },
+            'IR Iran': {
+                'fbref': "IR Iran",
+                'whoscored': "Iran",
+                'flashscore': "IR Iran"
+            },
+            'United States': {
+                'fbref': "United States",
+                'whoscored': "USA",
+                'flashscore': "United States"
+            },
+            'Hellas Verona': {
+                'fbref': "Hellas Verona",
+                'whoscored': "Verona",
+                'flashscore': "Hellas Verona"
+            },
+            'Milan': {
+                'fbref': "Milan",
+                'whoscored': "AC Milan",
+                'flashscore': "Milan"
+            },
+            'Parma': {
+                'fbref': "Parma",
+                'whoscored': "Parma Calcio 1913",
+                'flashscore': "Parma"
+            },
+            'Arminia': {
+                'fbref': "Arminia",
+                'whoscored': "Arminia Bielefeld",
+                'flashscore': "Arminia"
+            },
+            'Dortmund': {
+                'fbref': "Dortmund",
+                'whoscored': "Borussia Dortmund",
+                'flashscore': "Dortmund"
+            },
+            'Gladbach': {
+                'fbref': "Gladbach",
+                'whoscored': "Borussia M.Gladbach",
+                'flashscore': "Gladbach"
+            },
+            'Hertha BSC': {
+                'fbref': "Hertha BSC",
+                'whoscored': "Hertha Berlin",
+                'flashscore': "Hertha BSC"
+            },
+            'Köln': {
+                'fbref': "Köln",
+                'whoscored': "FC Koln",
+                'flashscore': "Köln"
+            },
+            'Leverkusen': {
+                'fbref': "Leverkusen",
+                'whoscored': "Bayer Leverkusen",
+                'flashscore': "Leverkusen"
+            },
+            'Stuttgart': {
+                'fbref': "Stuttgart",
+                'whoscored': "VfB Stuttgart",
+                'flashscore': "Stuttgart"
+            },
+            'Greuther Fürth': {
+                'fbref': "Greuther Fürth",
+                'whoscored': "Greuther Fuerth",
+                'flashscore': "Greuther Fürth"
+            },
+            'Darmstadt 98': {
+                'fbref': "Darmstadt 98",
+                'whoscored': "Darmstadt",
+                'flashscore': "Darmstadt 98"
+            },
+            'Heidenheim': {
+                'fbref': "Heidenheim",
+                'whoscored': "FC Heidenheim",
+                'flashscore': "Heidenheim"
+            },
+            'St Pauli': {
+                'fbref': "St Pauli",
+                'whoscored': "St. Pauli",
+                'flashscore': "St Pauli"
+            }
+        }
+        # Dynamically build specific translation dictionaries from the registy
+        self.mappings = {}
+        self._build_directional_mappings()
         
     # --------------------------------------------------------------------------- #
     
@@ -276,3 +503,40 @@ class Settings:
             actions[level]()
 
         self._rich_console.print(console_msg)
+
+    # --------------------------------------------------------------------------- #
+
+    def _build_directional_mappings(self):
+        """Automatically builds Source->Canonical and Canonical->Source maps."""
+        # Find all available source platforms dynamically
+        first_key = list(self.master_club_registry.keys())[0]
+        sources = self.master_club_registry[first_key].keys() # ['fbref', 'whoscored', etc.]
+        
+        for source in sources:
+            # 1. Map: Variant Name -> Canonical Name
+            self.mappings[f"{source}_to_canonical"] = {
+                details[source]: canonical 
+                for canonical, details in self.master_club_registry.items()
+            }
+            # 2. Map: Canonical Name -> Variant Name
+            self.mappings[f"canonical_to_{source}"] = {
+                canonical: details[source] 
+                for canonical, details in self.master_club_registry.items()
+            }
+
+    def load_club_registry(self, series: pd.Series, from_source: str, to_source: str) -> pd.Series:
+        """Translates a column seamlessly between ANY two sources."""
+        clean_series = pd.Series(series, dtype="string[python]")
+        
+        # Step 1: Convert original source name to the Master Canonical name
+        if from_source != "canonical":
+            to_canonical_map = self.mappings.get(f"{from_source}_to_canonical", {})
+            clean_series = clean_series.map(to_canonical_map).fillna(clean_series)
+            
+        # Step 2: Convert Master Canonical name to the target source name
+        if to_source != "canonical":
+            to_target_map = self.mappings.get(f"canonical_to_{to_source}", {})
+            clean_series = clean_series.map(to_target_map).fillna(clean_series)
+            
+        return clean_series
+

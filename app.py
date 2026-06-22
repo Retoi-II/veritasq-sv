@@ -104,20 +104,35 @@ def main():
     home_page = st.Page(
         "pages/dashboard.py",
         title="Veritasq Dashboard",
-        icon=":material/home:",
+        icon=":material/home:"
+    )
+    exploration = st.Page(
+        "pages/exploration.py",
+        title="Data Exploration",
+        icon=":material/search:"
+    )
+    preprocessing = st.Page(
+        "pages/preprocessing.py",
+        title="Data Preprocessing",
+        icon=":material/recycling:"
+    )
+    feature = st.Page(
+        "pages/feature.py",
+        title="Feature Engineering",
+        icon=":material/engineering:",
         default=True
     )
     summary = st.Page(
         "pages/summary.py",
-        title="Summary Page"
+        title="Summary Page",
+        icon=":material/cognition_2:"
     )
-    # home_page = st.Page()
 
     # --------------------------------------------------------------------------- #
     
     pages_structure = {
         "Core App": [home_page],
-        "Management": [summary]
+        "Management": [summary, exploration, preprocessing, feature]
     }
     pg = st.navigation(pages_structure, position="top")
     pg.run()
