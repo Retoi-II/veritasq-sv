@@ -33,7 +33,7 @@ Attributes:
     ['sd'] (SoccerdataAPI) : "https://api.soccerdataapi.com"
     ['ws'] (WhoScored) : "https://www.whoscored.com"
 
-## _Example:_
+Examples:
 ```
 GET_URL['ws'] # "https://www.whoscored.com"
 ```
@@ -73,7 +73,7 @@ Attributes:
     ['cache_sd'] (**standard key**, cached raw data from soccerdata) :
     ['events_path'] (**callable key**, events dataset path) : `league` `season` `team` (required parameters)
 
-## _Example:_
+Examples:
 ```
 # standard key lookup
 GET_PATH['locales'] # "/home/lyra/veritasq-sv/locales"
@@ -123,11 +123,12 @@ Attributes:
     ['tournament'] (**standard key**, offline dataset for tournaments) :
     ['game_info'] (**standard key**, offline dataset for game_info) :
     ['schedule'] (**standard key**, offline dataset for schedule) :
+    ['raw_events'] (**standard key**, offline path contains whoscored raw read_events dataset) :
     ['events'] (**callable key**, events dataset location) : `league` `season` `team` `game_id` (required parameters)
     ['spadl'] (**callable key**, events dataset location) : `league` `season` `type` (required parameters)
     ['badge'] (**callable key**, events dataset location) : `id` (required parameters)
 
-## _Example:_
+Examples:
 ```
 # standard key lookup
 GET_PATH['regional'] # "/home/lyra/veritasq-sv/cached_data/WhoScored/_regional_data.csv"
@@ -177,7 +178,7 @@ Attributes:
     ['player_season'] (**callable key**, offline dataset for player_season) : `stat_type` (required parameter)
     ['player_season_map'] (**callable key**, dataset configuration for player_season) : `stat_type` (required parameter)
 
-## _Example:_
+Examples:
     ```
     # callable key invocation
     GET_PATH['team_season'](

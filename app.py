@@ -101,10 +101,11 @@ def main():
 
     # --------------------------------------------------------------------------- #
 
-    home_page = st.Page(
-        "pages/dashboard.py",
-        title="Veritasq Dashboard",
-        icon=":material/home:"
+    dashboard = st.Page(
+        'pages/dashboard.py',
+        title="Veritasq",
+        icon=":material/home:",
+        default=True
     )
     exploration = st.Page(
         "pages/exploration.py",
@@ -119,8 +120,7 @@ def main():
     feature = st.Page(
         "pages/feature.py",
         title="Feature Engineering",
-        icon=":material/engineering:",
-        default=True
+        icon=":material/engineering:"
     )
     summary = st.Page(
         "pages/summary.py",
@@ -131,7 +131,7 @@ def main():
     # --------------------------------------------------------------------------- #
     
     pages_structure = {
-        "Core App": [home_page],
+        "Core App": [dashboard],
         "Management": [summary, exploration, preprocessing, feature]
     }
     pg = st.navigation(pages_structure, position="top")

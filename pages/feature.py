@@ -3,16 +3,13 @@ import os
 import glob
 import json
 import pandas as pd
-import polars as pl
 import soccerdata as sd
-import socceraction.spadl as spadl
 import lightgbm as lgb
 
 from collections.abc import Iterable
 from config.settings import GET_PATH, GET_WHOSCORED
 from soccerdata._config import TEAMNAME_REPLACEMENTS
 from soccerdata.whoscored import WHOSCORED_DATADIR
-from socceraction.data.opta import OptaLoader
 from utils import ws_patch as wsp
 from pathlib import Path
 

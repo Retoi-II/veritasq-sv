@@ -1,10 +1,7 @@
 import streamlit as st
 import logging
 import soccerdata as sd
-import polars as pl
 import pandas as pd
-from socceraction.data.opta import OptaLoader
-import socceraction.spadl as spadl
 
 from collections.abc import Iterable
 from config.settings import GET_WHOSCORED, GET_PATH
@@ -14,7 +11,6 @@ from utils.logger import StreamlitLogHandler
 from soccerdata._config import BASE_DIR
 from soccerdata.whoscored import WHOSCORED_DATADIR
 from soccerdata.fbref import FBREF_DATADIR
-from socceraction.spadl.wyscout import convert_to_actions
 from pathlib import Path
 
 
@@ -81,6 +77,8 @@ def main():
         
         if not opt_data_dir:
             opt_data_dir = None
+        else:
+            opt_data_dir = Path(opt_data_dir)
         if not opt_path_to_browser:
             opt_path_to_browser = None
     
@@ -235,8 +233,8 @@ def main():
             ws = init_whoscored(leagues=league, seasons=season)
             try:
                 with st.expander("Read Schedule"):
-                    schedule = ws.read()
-                    ids = schedule['game_id']
+                    schedule = ws.read_schedule()
+                    ids = schedule['game_id'][:2]
                     st.dataframe(schedule)
                 
                 with st.expander("Read Events"):

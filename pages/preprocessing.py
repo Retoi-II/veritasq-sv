@@ -2,7 +2,6 @@ import streamlit as st
 import json
 import glob
 import os
-import polars as pl
 import soccerdata as sd
 
 from collections.abc import Iterable
