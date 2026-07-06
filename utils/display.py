@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 import streamlit as st
+from config.settings import GET_WHOSCORED
 
 def display_config(config_data: dict) -> dict:
     display_config = {}
@@ -80,3 +81,32 @@ def update_team_in_config(team_key, placeholder=""):
     
     val = st.session_state.get(team_key)
     st.session_state.cfg_scraper[team_key] = None if val == placeholder else val
+
+
+def load_all_data(df_predicted):
+    df_fixtures = pd.read_json(GET_WHOSCORED['game_info'].parent / "fixtures.json", lines=True)
+    
+    df_fixtures['Date_Parsed'] = pd.to_datetime(df_fixtures['Date:'])
+    
+    df_fixtures['Fixture'] = df_fixtures.apply(
+        lambda row: " vs ".join(sorted([row['home_team'], row['away_team']])), 
+        axis=1
+    )
+    
+    df_fixtures = df_fixtures.sort_values(by=['season', 'Fixture', 'Date_Parsed'])
+    
+    df_fixtures['Leg_Number'] = df_fixtures.groupby(['season', 'Fixture']).cumcount() + 1
+    df_fixtures['Leg'] = "Leg " + df_fixtures['Leg_Number'].astype(str)
+    
+    # STRIP WHITESPACE to ensure clean merging
+    df_predicted['match_id'] = df_predicted['match_id'].astype(str).str.strip()
+    df_fixtures['game_id'] = df_fixtures['game_id'].astype(str).str.strip()
+    
+    merged_df = df_predicted.merge(
+        df_fixtures[['game_id', 'home_team', 'away_team', 'Fixture', 'Leg', 'Date:']], 
+        left_on='match_id', 
+        right_on='game_id', 
+        how='left'
+    )
+    
+    return merged_df

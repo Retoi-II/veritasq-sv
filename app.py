@@ -9,6 +9,11 @@ from streamlit_marquee import streamlit_marquee as marquee
 
 # ------------------------------------------------------------------------------- #
 
+st.set_page_config(
+    page_title="Veritasq",
+    layout="centered"
+)
+
 _ = translator.translate
 set = Settings(default_color="green")
 version = set.load_module_version
@@ -25,15 +30,15 @@ def footer():
             Dependencies → 
             Streamlit v{version("streamlit")} | 
             BeautifulSoup v{version("beautifulsoup4")} | 
-            Cloudscraper v{version("cloudscraper")} |
-            Socceraction v{version("socceraction")} |
             Soccerdata v{version("soccerdata")} |
+            Socceraction v{version("socceraction")} |
             Streamlit Marquee v{version("streamlit-marquee")} |
             Pandas v{version("pandas")} |
             Requests v{version("requests")} |
-            Regex v{version("re")} |
-            Random v{version("random")} |
-            Authlib v{version("Authlib")}
+            rich-cli v{version("rich-cli")} |
+            lightgbm v{version("lightgbm")} |
+            scikit-learn v{version("scikit-learn")} |
+            mplsoccer v{version("mplsoccer")} |
         """,
         background="#40000088",
         color="#ffffff",
@@ -91,33 +96,44 @@ def auth():
 
 def main():
     set.logMsg(_('app.ui.element.void'), level=6)
-    print("App.py")
+    print("Veritasq")
     print(_('app.ui.element.dash'))
-
-    st.set_page_config(
-        page_title="Veritasq",
-        layout="wide"
-    )
 
     # --------------------------------------------------------------------------- #
 
-    home_page = st.Page(
-        "pages/dashboard.py",
-        title="Veritasq Dashboard",
+    dashboard = st.Page(
+        'pages/dashboard.py',
+        title="Veritasq",
         icon=":material/home:",
         default=True
     )
-    summary = st.Page(
-        "pages/summary.py",
-        title="Summary Page"
+    exploration = st.Page(
+        "pages/exploration.py",
+        title="Data Exploration",
+        icon=":material/search:"
     )
-    # home_page = st.Page()
+    preprocessing = st.Page(
+        "pages/preprocessing.py",
+        title="Data Preprocessing",
+        icon=":material/recycling:"
+    )
+    modelling = st.Page(
+        "pages/modelling.py",
+        title="Modelling",
+        icon=":material/engineering:"
+    )
+    presentation = st.Page(
+        "pages/presentation.py",
+        title="Presentation",
+        icon=":material/cognition_2:"
+    )
 
     # --------------------------------------------------------------------------- #
     
     pages_structure = {
-        "Core App": [home_page],
-        "Management": [summary]
+        "Deployment": [dashboard],
+        "Management": [exploration, preprocessing, modelling],
+        "presentation": [presentation]
     }
     pg = st.navigation(pages_structure, position="top")
     pg.run()

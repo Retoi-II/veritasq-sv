@@ -13,13 +13,13 @@ from config.settings import GET_PATH
 Language = TypedDict("Language", {
     'en': str,
     'id': str,
-    'jv': str
+    # 'jv': str
 })
 
 GET_LANGUAGE: Language = {
     'en': "English",
     'id': "Bahasa Indonesia",
-    'jv': "Basa Jawa"
+    # 'jv': "Basa Jawa"
 }
 DEFAULT_LANGUAGE = "English"
 

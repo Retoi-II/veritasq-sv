@@ -1,149 +1,205 @@
 import json
-import streamlit as st
 import pandas as pd
-import utils.display as dp
-from rich import print
-from config.settings import GET_WHOSCORED, GET_PATH, Settings
 import soccerdata as sd
-
-# set = Settings()
-
-# path = GET_WHOSCORED['schedule']
-# # print(f"[green]SUCCESS[/green]\tSave events DataFrame to path.\n\t[bold green]{path.name}[/bold green]")
-# st.success(f":green[SUCCESS]&emsp;Save events DataFrame to path.\n&emsp;**:green[{path.name}]**")
-import logging
-import sys
-import streamlit as st
-import soccerdata as sd
-from utils.logger import StreamlitLogHandler
-st.title("🧪 Streamlit Logger Unit Test")
-st.write("Click the button below to simulate background library processes (like Selenium or SoccerData) emitting logs.")
-
-# 2. Setup the UI Layout placeholders
-status_box = st.empty()
-
-st.subheader("⚙️ Target UI Log Window (The Handler Output)")
-log_ui_placeholder = st.empty()
-
-# 1. Target the system-wide root logger instead of a named one
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-
-# 2. Completely strip away any pre-packaged handlers (like rich)
-# This forces libraries to stop bypassing your Streamlit handler
-root_logger.handlers.clear()
-
-# 3. Connect your custom Streamlit UI handler to the root stream
-ui_handler = StreamlitLogHandler(log_ui_placeholder)
-formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
-ui_handler.setFormatter(formatter)
-root_logger.addHandler(ui_handler)
-
-# 4. Optional: Add a standard console backup stream so you can still see output in terminal
-console_backup = logging.StreamHandler(sys.stdout)
-console_backup.setFormatter(formatter)
-root_logger.addHandler(console_backup)
-
-# 5. Interactive UI Runner Check
-if st.button("▶️ Run Logging Test Loop"):
-    status_box.info("Scraper running... Intercepting engine logs...")
-    
-    # Force a completely uncached query so the library has to download data
-    # (If the data is cached, it won't emit runtime logs!)
-    ws = sd.WhoScored(leagues="FRA-Ligue 1", seasons="2324")
-    
-    status_box.success("Execution complete.")
-
-
-st.stop()
-
-import logging
-import time
 import streamlit as st
 
-# 1. The Log Handler class we are testing
-class StreamlitLogHandler(logging.Handler):
-    def __init__(self, container):
-        super().__init__()
-        self.container = container
-        self.log_buffer = []
-
-    def emit(self, record):
-        msg = self.format(record)
-        self.log_buffer.append(msg)
-        if len(self.log_buffer) > 15:  # Keep it short for testing
-            self.log_buffer.pop(0)
-        full_log_text = "\n".join(self.log_buffer)
-        self.container.code(full_log_text, language="log")
-
-st.title("🧪 Streamlit Logger Unit Test")
-st.write("Click the button below to simulate background library processes (like Selenium or SoccerData) emitting logs.")
-
-# 2. Setup the UI Layout placeholders
-status_box = st.empty()
-
-st.subheader("⚙️ Target UI Log Window (The Handler Output)")
-log_ui_placeholder = st.empty()
-
-# 3. Initialize the logging system
-# We create a specific dummy logger name 'mock_library' for this test
-# mock_logger = logging.getLogger("mock_library")
-# mock_logger.setLevel(logging.INFO)
-
-soccerdata = logging.getLogger("soccerdata")
-soccerdata.setLevel(logging.INFO)
+from utils import ws_patch as wsp
+from config.settings import GET_PATH, GET_WHOSCORED, GET_FBREF
+from pathlib import Path
 
 
-# Connect our custom Streamlit handler to the mock logger
-ui_handler = StreamlitLogHandler(log_ui_placeholder)
-formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
-ui_handler.setFormatter(formatter)
-# mock_logger.addHandler(ui_handler)
-soccerdata.addHandler(ui_handler)
+# if "session_logs" in st.session_state and st.session_state.session_logs:
+#     st.code("\n".join(st.session_state.session_logs), language="log")
 
-# 4. The Interactive Test Runner
-if st.button("▶️ Run Logging Test Loop"):
-    status_box.info("Test running... Watch the console box below populate in real-time!")
-    ws = sd.WhoScored(leagues="ENG-Premier League", seasons=2425)
-    
-    # # Simulate background library logging milestones over a few seconds
-    # mock_logger.info("Initializing automated browser environment...")
-    # time.sleep(1)
-    
-    # mock_logger.info("Connecting to localhost port 40549...")
-    # time.sleep(1)
-    
-    # mock_logger.warning("Connection sluggish, retrying session connection request (Attempt 1/3)...")
-    # time.sleep(1.5)
-    
-    # mock_logger.info("SUCCESS: Connected to WhoScored target endpoint.")
-    # time.sleep(1)
-    
-    # for i in range(1, 6):
-    #     mock_logger.info(f"Downloading match event payload data package ({i}/5)...")
-    #     time.sleep(0.5)
-        
-    # mock_logger.info("Data harvesting complete. Terminating active driver thread safely.")
-    # status_box.success("✅ Test loop finished completely! Check the code block below to verify formatting matches expectations.")
+# ws = sd.WhoScored("ENG-Premier League", 2526, no_cache=False, no_store=False)
+# sd.WhoScored.read_seasons = wsp.read_seasons_patch
+# sd.WhoScored.read_season_stages = wsp.read_season_stages_patch
+# sd.WhoScored.read_schedule = wsp.read_schedule_patch
 
+# csv = GET_WHOSCORED['schedule']
+# df = pl.read_csv(csv) \
+#     .filter(
+#         (
+#             (pl.col('home_team') == "Manchester United") |
+#             (pl.col('away_team') == "Manchester United")
+#         ) & (
+#             (pl.col('league') == "ENG-Premier League") &
+#             (pl.col('season') == 2526)
+#         )
+#     ).select(['game', 'game_id'])
+
+# game_id = df.select(pl.col('game_id')).tail(5) # Memuat lima pertandingan terakhir
+# game_id_list = game_id['game_id'].to_list() # Konversi Polars DataFrame -> Python List
+
+# events_df = pd.DataFrame()
+
+# for i, id in enumerate(game_id_list):
+#     file_name = GET_WHOSCORED['events'](season=2526, league="ENG-Premier League", game_id=id, team="Manchester United")
+#     print(f"[{i + 1}/{len(game_id_list)}]  Processing {id}")
+
+#     if not file_name.exists():
+#         fetch = ws.read_events(id)
+#         fetch = pd.DataFrame(fetch)
+#         fetch.to_csv(file_name, mode='w')
+#         events_df = pd.concat([events_df, fetch], ignore_index=True)
+#     else:
+#         df = pd.read_csv(file_name)
+#         events_df = pd.concat([events_df, df], ignore_index=True)
+
+# events_df = pl.DataFrame(events_df)
+# search_game_id = game_id_list[:-1]
+# target_game_id = game_id_list[-1:]
+# with st.container():
+#     st.caption(game_id_list)
+#     st.caption(f"{search_game_id} -> Search for Game ID")
+#     st.caption(f"{target_game_id} -> Target Game ID")
+
+# st.dataframe(
+#     events_df.filter(
+#         pl.col('game_id') == int(str(target_game_id[0]))
+#     ), hide_index=False
+# )
+
+path = {
+    'events': Path.cwd() / "cached_data" / "Wyscout" / "events",
+    'matches': Path.cwd() / "cached_data" / "Wyscout" / "matches"
+} 
+
+save_path = Path.cwd() / "cached_data" / "Wyscout"
+
+data_files = {
+    'events': Path.cwd() / "cached_data" / "events.zip",  # ZIP file containing one JSON file for each competition
+    'matches': Path.cwd() / "cached_data" / "matches.zip",  # ZIP file containing one JSON file for each competition
+    'players': Path.cwd() / "socceraction" / "players.json",  # JSON file
+    'teams': Path.cwd() / "socceraction" / "teams.json"  # JSON file
+}
+print("==================================")
+print("==================================")
+print("==================================")
+import numpy as np
+print("==================================")
+print("==================================")
+df_teams = pd.read_json(data_files['teams'], encoding='unicode_escape')
+# df_teams.to_hdf(save_path / "wyscout.h5", key='teams', mode='w')
+
+df_teams['area'] = df_teams['area'].astype(str)
+# st.dataframe(df_teams)  
+
+
+df_players = pd.read_json(data_files['players'], encoding='unicode_escape')
+# df_players.to_hdf(save_path / "wyscout.h5", key='players', mode='a')
+
+df_players = df_players.replace('null', np.nan)
+mixed_cols = ['passportArea', 'birthArea']
+for col in mixed_cols:
+    if col in df_players.columns:
+        # If the column contains nested dictionaries, extract the 'name' or stringify it
+        df_players[col] = df_players[col].apply(
+            lambda x: x.get('name') if isinstance(x, dict) else str(x) if pd.notnull(x) else np.nan
+        )
+        # Ensure the final output is safely treated as a uniform string column
+        df_players[col] = df_players[col].astype(str)
+
+# 4. Clean up the explicit ID columns to be nullable integers
+id_cols = ['currentTeamId']
+for col in id_cols:
+    if col in df_players.columns:
+        df_players[col] = df_players[col].astype('Int64')
+# st.dataframe(df_players)
+
+
+competitions = [
+    'England',
+    # 'France',
+    # 'Germany',
+    # 'Italy',
+    # 'Spain',
+    # 'European Championship',
+    # 'World Cup'
+]
+
+
+dfs_matches = []
+for competition in competitions:
+    competition_name = competition.replace(' ', '_')
+    file_matches = path['matches'] / f"matches_{competition_name}.json"
+    df_matches = pd.read_json(file_matches, encoding='unicode_escape')
+    dfs_matches.append(df_matches)
+df_matches = pd.concat(dfs_matches)
+# df_matches.to_hdf(save_path / "wyscout.h5", key='matches', mode='a')
+
+df = pd.DataFrame(df_matches)
+keys = df[df['label'].str.contains("arsenal", case=False, na=False)]['wyId']
+keys_append = []
+for id in keys:
+    key = f"actions/game_{id}"
+    keys_append.append(key)
+
+all_actions = []
+
+with pd.HDFStore(save_path / "spadl_1609.h5",  mode='r') as store:
+    for i, key in enumerate(keys_append):
+        print(f"Processing {i}/{len(keys_append)}")
+        if f"/{key}" in store.keys() or key in store.keys():
+            df_game = store[key]
+            all_actions.append(df_game)
+
+if all_actions:
+    df_spadl = pd.concat(all_actions, ignore_index=True)
+    print(f"Successfully loaded {len(all_actions)} games into df_spadl!")
 else:
-    status_box.warning("System idling. Click 'Run Logging Test Loop' above to fire test log signals.")
+    df_spadl = pd.DataFrame()
+    print("Warning: No matching game keys found in the HDF5 file.")
 
+st.dataframe(df_spadl, hide_index=False)
 
-
+# st.caption("Matches DataFrame")
+# st.dataframe(df_matches)
 st.stop()
+from socceraction.spadl.wyscout import convert_to_actions
 
-flat_df = pd.DataFrame()
+for competition in competitions:
+    competition_name = competition.replace(' ', '_')
+    file_events = path['events'] / f"events_{competition_name}.json"
+    df_events = pd.read_json(file_events)
+    rename_dict = {
+        'id': 'event_id',
+        'eventId': 'type_id',          # Wyscout v2 'eventId' maps to spadl 'type_id'
+        'eventName': 'type_name',
+        'subEventId': 'subtype_id',    # This fixes the current error!
+        'subEventName': 'subtype_name',
+        'playerId': 'player_id',
+        'matchId': 'game_id',
+        'teamId': 'team_id',
+        'matchPeriod': 'period_id',
+        'eventSec': 'milliseconds'     # Note: spadl convert_to_actions expects milliseconds (seconds * 1000)
+    }
 
-file_path = GET_WHOSCORED['schedule']
-df = pd.read_csv(file_path)
-st.dataframe(df)
-flat_df, config = dp.flatten_with_config(df)
-st.dataframe(flat_df)
-st.json(config)
+    df_events = df_events.rename(columns=rename_dict)
 
-flat_df.to_csv(GET_PATH['locales'], index=True)
-with open(GET_PATH['locales', 'w']) as f:
-    json.dump(config, f, indent=4)
+    if df_events['milliseconds'].max() < 10000:
+        df_events['milliseconds'] = df_events['milliseconds'] * 1000
+
+    # st.caption("SPADL")
+    # st.dataframe(df_actions)
+    i = 0
+    df_events_matches = df_events.groupby('game_id', as_index=False)
+    # for match_id, df_events_match in df_events_matches:
+        # i += 1
+    #     df_events_match.to_hdf(save_path / "wyscout.h5", key=f'events/match_{match_id}', mode='a')
+        # print(f"Converting to spadl {i}/{len(df_events_matches)}")
+        # df_events = pd.read_hdf(save_path / "wyscout_v3.h5", key=f"events/match_{match_id}")
+        # df_actions = convert_to_actions(df_events, home_team_id=1609)
+        # if "original_event_id" in df_actions.columns:
+        #     df_actions["original_event_id"] = df_actions["original_event_id"].astype(str)
+        # df_actions.to_hdf(save_path / "spadl_1609.h5", key=f"actions/game_{match_id}", mode='a', format="table")
+
+if (save_path / "spadl_1609.h5").exists():
+    print(save_path / "spadl_1609.h5")
+
+# with pd.HDFStore(save_path / "wyscout_v3.h5", mode="r") as store:
+#     print("Available keys in HDF5:", store.keys())
+    
+
 
 

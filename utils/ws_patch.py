@@ -4,11 +4,14 @@ import os, logging
 import pandas as pd
 from io import BytesIO
 from lxml import html
+from typing import Optional, Literal, Union
 from soccerdata._config import TEAMNAME_REPLACEMENTS
 from soccerdata.whoscored import WhoScored, WHOSCORED_URL, _parse_url
 from soccerdata._common import make_game_id, standardize_colnames
 import soccerdata as sd
+from pathlib import Path
 from selenium.webdriver.common.by import By
+import socceraction
 
 logger = logging.getLogger("root")
 logger.setLevel(logging.ERROR)
@@ -457,3 +460,185 @@ def read_game_info_patch_serie_a(self, game_id: int) -> dict:
                 data[desc_def.text] = desc_val.text
 
     return data
+
+def read_events(  # noqa: C901
+    self,
+    match_id: Optional[Union[int, list[int]]] = None,
+    force_cache: bool = False,
+    live: bool = False,
+    output_fmt: Optional[str] = "events",
+    retry_missing: bool = True,
+    on_error: Literal["raise", "skip"] = "raise",
+) -> Optional[Union[pd.DataFrame, dict[int, list], "OptaLoader"]]:   # type: ignore  # noqa: F821
+    output_fmt = output_fmt.lower() if output_fmt is not None else None
+    if output_fmt in ["loader", "spadl", "atomic-spadl"]:
+        if self.no_store:
+            raise ValueError(
+                f"The '{output_fmt}' output format is not supported "
+                "when using the 'no_store' option."
+            )
+        try:
+            from socceraction.atomic.spadl import convert_to_atomic
+            from socceraction.data.opta import OptaLoader
+            from socceraction.data.opta.loader import _eventtypesdf
+            from socceraction.data.opta.parsers import WhoScoredParser
+            from socceraction.spadl.opta import convert_to_actions
+
+            if output_fmt == "loader":
+                import socceraction
+                from packaging import version
+
+                if version.parse(socceraction.__version__) < version.parse("1.2.3"):
+                    raise ImportError(
+                        "The 'loader' output format requires socceraction >= 1.2.3"
+                    )
+        except ImportError:
+            raise ImportError(
+                "The socceraction package is required to use the 'spadl' "
+                "or 'atomic-spadl' output format. "
+                "Please install it with `pip install socceraction`."
+            )
+    urlmask = WHOSCORED_URL + "/Matches/{}/Live"
+    filemask = "events/{}_{}/{}.json"
+
+    df_schedule = self.read_schedule(force_cache).reset_index()
+    if match_id is not None:
+        iterator = df_schedule[
+            df_schedule.game_id.isin([match_id] if isinstance(match_id, int) else match_id)
+        ]
+        if len(iterator) == 0:
+            raise ValueError("No games found with the given IDs in the selected seasons.")
+    else:
+        iterator = df_schedule.sample(frac=1)
+
+    events = {}
+    player_names = {}
+    team_names = {}
+    for i, (_, game) in enumerate(iterator.iterrows()):
+        url = urlmask.format(game["game_id"])
+        # get league and season
+        logger.info(
+            "[%s/%s] Retrieving game with id=%s",
+            i + 1,
+            len(iterator),
+            game["game_id"],
+        )
+        filepath = self.data_dir / filemask.format(
+            game["league"], game["season"], game["game_id"]
+        )
+
+        try:
+            reader = self.get(
+                url,
+                filepath,
+                var="require.config.params['args'].matchCentreData",
+                no_cache=live,
+            )
+            reader_value = reader.read()
+            if (retry_missing and reader_value == b"null") or reader_value == b"":
+                reader = self.get(
+                    url,
+                    filepath,
+                    var="require.config.params['args'].matchCentreData",
+                    no_cache=True,
+                )
+        except ConnectionError as e:
+            if on_error == "skip":
+                logger.warning("Error while scraping game %s: %s", game["game_id"], e)
+                continue
+            raise
+        reader.seek(0)
+        json_data = json.load(reader)
+        if json_data is not None:
+            player_names.update(
+                {int(k): v for k, v in json_data["playerIdNameDictionary"].items()}
+            )
+            team_names.update(
+                {
+                    int(json_data[side]["teamId"]): json_data[side]["name"]
+                    for side in ["home", "away"]
+                }
+            )
+            if "events" in json_data:
+                game_events = json_data["events"]
+                if output_fmt == "events":
+                    df_events = pd.DataFrame(game_events)
+                    df_events["game"] = game["game"]
+                    df_events["league"] = game["league"]
+                    df_events["season"] = game["season"]
+                    df_events["game_id"] = game["game_id"]
+                    events[game["game_id"]] = df_events
+                elif output_fmt == "raw":
+                    events[game["game_id"]] = game_events
+                elif output_fmt in ["spadl", "atomic-spadl"]:
+                    parser = WhoScoredParser(
+                        str(filepath),
+                        competition_id=game["league"],
+                        season_id=game["season"],
+                        game_id=game["game_id"],
+                    )
+                    df_events = (
+                        pd.DataFrame.from_dict(parser.extract_events(), orient="index")
+                        .merge(_eventtypesdf, on="type_id", how="left")
+                        .reset_index(drop=True)
+                    )
+                    df_actions = convert_to_actions(
+                        df_events, home_team_id=int(json_data["home"]["teamId"])
+                    )
+                    if output_fmt == "spadl":
+                        events[game["game_id"]] = df_actions
+                    else:
+                        events[game["game_id"]] = convert_to_atomic(df_actions)
+
+        else:
+            logger.warning("No events found for game %s", game["game_id"])
+
+    if output_fmt is None:
+        return None
+
+    if output_fmt == "raw":
+        return events
+    
+    if output_fmt == "raw_nested":
+        return json_data
+
+    if output_fmt == "loader":
+        return OptaLoader(
+            root=self.data_dir,
+            parser="whoscored",
+            feeds={
+                "whoscored": str(Path("events/{competition_id}_{season_id}/{game_id}.json"))
+            },
+        )
+
+    if len(events) == 0:
+        return pd.DataFrame(index=["league", "season", "game"])
+
+    df = (
+        pd.concat(events.values())
+        .pipe(standardize_colnames)
+        .assign(
+            player=lambda x: x.player_id.replace(player_names),
+            team=lambda x: x.team_id.replace(team_names).replace(TEAMNAME_REPLACEMENTS),
+        )
+    )
+
+    if output_fmt == "events":
+        df = df.set_index(["league", "season", "game"]).sort_index()
+        # add missing columns
+        for col, default in COLS_EVENTS.items():
+            if col not in df.columns:
+                df[col] = default
+        df["outcome_type"] = df["outcome_type"].apply(
+            lambda x: x.get("displayName") if pd.notnull(x) else x
+        )
+        df["card_type"] = df["card_type"].apply(
+            lambda x: x.get("displayName") if pd.notnull(x) else x
+        )
+        df["type"] = df["type"].apply(lambda x: x.get("displayName") if pd.notnull(x) else x)
+        df["period"] = df["period"].apply(
+            lambda x: x.get("displayName") if pd.notnull(x) else x
+        )
+        df = df[list(COLS_EVENTS.keys())]
+
+    return df
