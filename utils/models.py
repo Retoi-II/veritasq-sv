@@ -42,6 +42,7 @@ def calculate_exact_minutes(formations_array):
         
     return player_minutes
 
+<<<<<<< HEAD
 def get_final_rating(ratings_dict):
     """Extracts the rating from the final recorded minute efficiently."""
     if not isinstance(ratings_dict, dict) or not ratings_dict:
@@ -115,6 +116,8 @@ def analyze_rating_periods(ratings_dict, period_length=30):
         
     return results
 
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 @st.cache_data(show_spinner=True, show_time=True)
 def load_match_data(league, seasons, path_dir: Path = GET_WHOSCORED['raw_events']):
     """

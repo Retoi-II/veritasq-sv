@@ -1,6 +1,9 @@
 *pycache*
 .venv
+<<<<<<< HEAD
 .venv*
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 *temp*
 *:Zone.Identifier
 *.ipynb
@@ -11,4 +14,7 @@ matches.zip
 socceraction_.rar
 csv
 manual_parquet.rar
+<<<<<<< HEAD
 cached_data/soccerdata
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431

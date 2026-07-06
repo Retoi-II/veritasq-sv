@@ -117,6 +117,7 @@ def main():
         title="Data Preprocessing",
         icon=":material/recycling:"
     )
+<<<<<<< HEAD
     modelling = st.Page(
         "pages/modelling.py",
         title="Modelling",
@@ -125,15 +126,30 @@ def main():
     presentation = st.Page(
         "pages/presentation.py",
         title="Presentation",
+=======
+    feature = st.Page(
+        "pages/feature.py",
+        title="Feature Engineering",
+        icon=":material/engineering:"
+    )
+    summary = st.Page(
+        "pages/summary.py",
+        title="Summary Page",
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
         icon=":material/cognition_2:"
     )
 
     # --------------------------------------------------------------------------- #
     
     pages_structure = {
+<<<<<<< HEAD
         "Deployment": [dashboard],
         "Management": [exploration, preprocessing, modelling],
         "presentation": [presentation]
+=======
+        "Core App": [dashboard],
+        "Management": [summary, exploration, preprocessing, feature]
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
     }
     pg = st.navigation(pages_structure, position="top")
     pg.run()

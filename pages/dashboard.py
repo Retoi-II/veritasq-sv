@@ -20,6 +20,7 @@ from mplsoccer import Pitch
 # =============================================================================== #
 # -- INITIALIZATION & SOCCERDATA PATCHING --------------------------------------- #
 # =============================================================================== #
+<<<<<<< HEAD
 
 st.json(st.session_state,expanded=False)
 TITLE = "Veritasq"
@@ -27,6 +28,8 @@ st.set_page_config(
     page_title=TITLE,
     layout="wide"
 )
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 
 set = Settings()
 hlp = helpers
@@ -80,10 +83,17 @@ def render_cascading_config(
     # --- case 02: [ui.layout.module] Tournament Selection ---------------------- #
     tournaments = df[df['region'] == cfg_region]['tournament'].unique().tolist()
     cfg_tournament = containers["select_tournament"].selectbox(
+<<<<<<< HEAD
         _("app.dashboard.cfg_tournament.label"), tournaments, index=get_default_index(tournaments, prev_settings.get('tournament')) # Config Region
     )
     if cfg_tournament:
         set.logMsg(f"{_("app.dashboard.cfg_tournament.caption")}: :green[{cfg_tournament}]", level=2, container=containers["caption_tournament"]) # Selected Tournament
+=======
+        _("app.dashboard.cfg_region.label"), tournaments, index=get_default_index(tournaments, prev_settings.get('tournament')) # Config Region
+    )
+    if cfg_tournament:
+        set.logMsg(f"{_("app.dashboard.cfg_region.caption")}: :green[{cfg_tournament}]", level=2, container=containers["caption_tournament"]) # Selected Tournament
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
     else:
         footer()
         st.stop()
@@ -158,10 +168,30 @@ def main() -> None:
     Path(GET_PATH['cache_fb']).mkdir(parents=True, exist_ok=True)
 
     # --------------------------------------------------------------------------- #
+<<<<<<< HEAD
     # --- case 01: [INITIALIZATION] session_state ------------------------------- #
     # --------------------------------------------------------------------------- #
 
     config, conf, is_loaded = hlp.initialize_state()
+=======
+    # --- case 01: [INITIALIZATION] session_state (multi-tab) ------------------- #
+    # --------------------------------------------------------------------------- #
+
+    hlp.initialize_state()
+
+    config = st.session_state.get('cfg_scraper', {})
+    team_badge_state = st.session_state.get('team_badge', {})
+    is_loaded = st.session_state.get('is_loaded', 0)
+
+    conf = {
+        'cfg_region_prev': config.get("region"),
+        'cfg_tournament_prev': config.get("tournament"),
+        'cfg_season_prev': config.get("season"),
+        'directory_value': config.get("directory", ''),
+        'team_a_prev': team_badge_state.get("team_a", ''),
+        'team_b_prev': team_badge_state.get("team_b", ''),
+    }
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 
 
     # --------------------------------------------------------------------------- #
@@ -301,11 +331,17 @@ def main() -> None:
 
 
     # --- case 05-3: Render Club Logos ------------------------------------------ #
+<<<<<<< HEAD
     if st.session_state.get('team_badge', {}).get('team_a', "Select a team...") != "Select a team..." and \
         st.session_state.get('team_badge', {}).get('team_b', "Select a team...") != "Select a team...":
 
         with logos_area:
             if "team_a" in st.session_state and "team_b" in st.session_state:
+=======
+    with logos_area:
+        if "team_a" in st.session_state and "team_b" in st.session_state:
+            if "team_badge" in st.session_state:
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
                 tb_df = pd.read_csv(GET_PATH['cache_ws'] / "_team_id.csv")
                 id_a = tb_df[tb_df['team_name'] == st.session_state.team_a]['team_id'].item()
                 id_b = tb_df[tb_df['team_name'] == st.session_state.team_b]['team_id'].item()
@@ -317,6 +353,7 @@ def main() -> None:
                 with logo_col2:
                     with st.container(border=True, horizontal=True, horizontal_alignment="center"):
                         st.image(GET_WHOSCORED['badge'](int(id_b)))
+<<<<<<< HEAD
             elif not conf['team_a_prev'] and not conf['team_b_prev']:
                 st.info(_("app.dashboard.logos_area.info")) # Please fill the configuration section
             else:
@@ -435,6 +472,126 @@ def main() -> None:
                     traceback.print_exc()
             else:
                 st.info(_("app.dashboard.team_df_container.info")) # The scraping initialization pipeline requires selection validations across both targeting groups.
+=======
+        elif not conf['team_a_prev'] and not conf['team_b_prev']:
+            st.info(_("app.dashboard.logos_area.info")) # Please fill the configuration section
+        else:
+            st.info(_("app.dashboard.logos_area.info_2")) # Choose teams
+
+
+    # --- case 05-4: Render Processing Routine ---------------------------------- #
+    with team_df_container:
+        if st.session_state.get('team_badge', {}).get('team_a', "Select a team...") != "Select a team..." and \
+           st.session_state.get('team_badge', {}).get('team_b', "Select a team...") != "Select a team...":
+            try:
+
+                with st.expander("Modelling"):
+                    df0 = models.load_match_data(league_str, season_int)
+                    st.caption(f"Load Match Data -> {len(df0['match_id'].unique())} Matches")
+                    st.dataframe(df0)
+
+                    df1 = models.create_lag_features(df0)
+                    st.caption(f"Load Lag Features -> {len(df1['match_id'].unique())} Matches. {len(df1['player_id'].unique())}/{len(df0['player_id'].unique())} Players Loaded")
+
+                    st.dataframe(df1)
+                    model, df2 = models.train_model(df1)
+
+                    st.write(df2)
+                    st.caption("Lineups")
+
+                    df3 = models.construct_lineups(df2)
+                    st.dataframe(df3)
+
+                with st.expander("Visualization"):
+                    df3 = dp.load_all_data(df3)
+                    
+                    # SAFELY create the display label handling NaNs
+                    df3['Display_Label'] = df3.apply(
+                        lambda row: f"{row['home_team']} vs {row['away_team']} ({row['Leg']} - {row['Date:']})" 
+                        if pd.notna(row['home_team']) 
+                        else f"Match ID: {row['match_id']} (No Fixture Data)", 
+                        axis=1
+                    )
+
+                    display_options = df3['Display_Label'].unique().tolist()
+    
+                    target_match = df3[
+                        ((df3['home_team'] == st.session_state.team_a) & (df3['away_team'] == st.session_state.team_b))
+                    ]
+
+                    if not target_match.empty:
+                        target_label = target_match.iloc[0]['Display_Label']
+                        default_index = display_options.index(target_label)
+                    else:
+                        # Fallback to the very first match if id_a and id_b aren't found
+                        default_index = 0
+                    
+                    selected_label = st.selectbox("Select Match", display_options, index=default_index)
+                    
+                    # SAFELY filter and check if data exists before calling .iloc[0]
+                    filtered_data = df3[df3['Display_Label'] == selected_label]
+                    
+                    if not filtered_data.empty:
+                        match_data = filtered_data.iloc[0]
+                        match_id = match_data['match_id']
+                        raw_players = match_data['predicted_11']
+
+                        # Check if it's already a list, or if it needs to be split from a string
+                        if isinstance(raw_players, list):
+                            predicted_players = [str(player).strip() for player in raw_players]
+                        elif isinstance(raw_players, str):
+                            predicted_players = [player.strip() for player in raw_players.split(',')]
+                        else:
+                            predicted_players = []
+                            st.error("Data format error: 'predicted_11' is neither a string nor a list.")
+
+                        formation_433_coords = [
+                            (10, 40),   # Goalkeeper
+                            (30, 70),   # Left Back
+                            (25, 50),   # Center Back 1
+                            (25, 30),   # Center Back 2
+                            (30, 10),   # Right Back
+                            (50, 60),   # Left Mid
+                            (45, 40),   # Center Mid
+                            (50, 20),   # Right Mid
+                            (75, 70),   # Left Winger
+                            (85, 40),   # Striker
+                            (75, 10)    # Right Winger
+                        ]
+
+                        if len(predicted_players) == 11:
+                            st.subheader(f"Predicted Starting XI for Match {match_id}")
+
+                            pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
+                            fig, ax = pitch.draw(figsize=(10, 7))
+
+                            for i, player_name in enumerate(predicted_players):
+                                x, y = formation_433_coords[i]
+                                
+                                # Draw player node (circle)
+                                pitch.scatter(x, y, ax=ax, s=600, color='#ea6969', edgecolors='white', zorder=2)
+                                
+                                # Add player name label
+                                pitch.annotate(player_name, xy=(x, y - 4), ax=ax, 
+                                            ha='center', va='center', color='white', 
+                                            fontsize=10, fontweight='bold', zorder=3)
+                            
+                            st.pyplot(fig)
+                            
+                            with st.expander("View Raw Player List"):
+                                st.write(predicted_players)
+                        else:
+                            st.error(f"Data error: Found {len(predicted_players)} players instead of 11.")
+                            
+                    else:
+                        st.warning("Could not locate data for the selected match.")
+
+            except Exception as e:
+                st.error(f"{_("app.dashboard.team_df_container.error")}: {e}") # Processing routine halted unexpected
+                traceback.print_exc()
+        else:
+            st.info(_("app.dashboard.team_df_container.info")) # The scraping initialization pipeline requires selection validations across both targeting groups.
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 
 if __name__ == "__main__":
     main()

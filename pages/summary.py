@@ -1,4 +1,8 @@
 import json
+<<<<<<< HEAD
+=======
+import polars as pl
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 import pandas as pd
 import soccerdata as sd
 import streamlit as st
@@ -8,6 +12,7 @@ from config.settings import GET_PATH, GET_WHOSCORED, GET_FBREF
 from pathlib import Path
 
 
+<<<<<<< HEAD
 # if "session_logs" in st.session_state and st.session_state.session_logs:
 #     st.code("\n".join(st.session_state.session_logs), language="log")
 
@@ -16,6 +21,17 @@ from pathlib import Path
 # sd.WhoScored.read_season_stages = wsp.read_season_stages_patch
 # sd.WhoScored.read_schedule = wsp.read_schedule_patch
 
+=======
+
+# if "session_logs" in st.session_state and st.session_state.session_logs:
+#     st.code("\n".join(st.session_state.session_logs), language="log")
+
+# ws = sd.WhoScored("ENG-Premier League", 2526, no_cache=False, no_store=False)
+# sd.WhoScored.read_seasons = wsp.read_seasons_patch
+# sd.WhoScored.read_season_stages = wsp.read_season_stages_patch
+# sd.WhoScored.read_schedule = wsp.read_schedule_patch
+
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 # csv = GET_WHOSCORED['schedule']
 # df = pl.read_csv(csv) \
 #     .filter(

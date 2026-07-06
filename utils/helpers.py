@@ -14,6 +14,7 @@ def initialize_state() -> None:
         st.session_state.team_b = PLACEHOLDER
     if "cfg_scraper" not in st.session_state: 
         st.session_state.cfg_scraper = {}
+<<<<<<< HEAD
     
     config = st.session_state.get('cfg_scraper', {})
     team_badge_state = st.session_state.get('team_badge', {})
@@ -29,3 +30,5 @@ def initialize_state() -> None:
     }
 
     return config, conf, is_loaded
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431

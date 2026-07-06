@@ -1,9 +1,14 @@
 import streamlit as st
 import json
 import glob
+<<<<<<< HEAD
 import os, time
 import soccerdata as sd
 import pandas as pd
+=======
+import os
+import soccerdata as sd
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 
 from collections.abc import Iterable
 from config.settings import GET_PATH
@@ -12,6 +17,7 @@ from soccerdata.whoscored import WHOSCORED_DATADIR
 from utils import ws_patch as wsp
 from pathlib import Path
 
+<<<<<<< HEAD
 from pages.dashboard import load_regional_data, render_cascading_config, parse_season_string
 from config.settings import GET_WHOSCORED, Settings
 from config.langs import translator
@@ -30,12 +36,15 @@ set = Settings()
 config, conf, is_loaded = hlp.initialize_state()
 _ = translator.translate
 
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 
 # ------------------------------------------------------------------------------- #
 # -- UI STRUCTURE AND LOG HANDLER ----------------------------------------------- #
 # ------------------------------------------------------------------------------- #
 
 menu = st.empty()
+<<<<<<< HEAD
 col1, col2 = st.columns([1, 2])
 with col1:
     config_ui = st.container()
@@ -55,6 +64,8 @@ with config_ui:
         "select_season": st.empty(), "caption_season": st.empty(),
         "select_directory": st.empty(), "caption_directory": st.empty()
     }
+=======
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 
 # -- ---------------------------------------------------------------------------- #
 
@@ -64,7 +75,11 @@ def main():
     opt_menus = []
     option_map = {
         1: "Events",
+<<<<<<< HEAD
         2: "soon"
+=======
+        2: "etc"
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
     }
     selection = menu.segmented_control(
         "Menu",
@@ -75,6 +90,7 @@ def main():
     )
 
     if selection == 1:
+<<<<<<< HEAD
         # --- case 04-0: Load Layout Requirements ----------------------------------- #
         df_regional = load_regional_data(GET_WHOSCORED['regional'])
         prev_settings = {
@@ -212,6 +228,14 @@ def main():
                                     st.dataframe(all_players_data)
 
 
+=======
+        file_path = WHOSCORED_DATADIR / "events" / "ENG-Premier League_2526" / "1903117.json"
+        
+        with open(file_path, 'r') as file:
+            json_data = json.load(file)
+
+        st.json(json_data, expanded=False)
+>>>>>>> 07eef9d1562d7ccb8b67f11a28953febfcf60431
 if __name__ == "__main__":
     main()
 
